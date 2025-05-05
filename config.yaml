@@ -1,0 +1,20 @@
+app_env: dev
+database:
+  host: localhost
+  port: 5432
+  db: database
+  user: postgres
+  password: 1234
+
+
+s3:
+  access_key: user
+  secret_key: password
+  region: ru-central1
+  endpoint: http://localhost:9000
+  bucket: bucket
+
+
+
+first_external_host: http://web1.org
+second_external_host: http://web2.org

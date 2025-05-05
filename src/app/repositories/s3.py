@@ -1,0 +1,35 @@
+from typing import BinaryIO
+import aioboto3
+from src.app.core.config import settings
+
+class S3Repository:
+    def __init__(self, s3_client):
+        self.s3_client = s3_client
+
+    async def upload_fileobj(self, file_obj: BinaryIO, key: str, content_type: str = "application/octet-stream") -> None:
+        async with self.s3_client as s3:
+            await s3.upload_fileobj(
+                Fileobj=file_obj,
+                Bucket=settings.s3.bucket,
+                Key=key,
+                ExtraArgs={"ContentType": content_type}
+            )
+            return f"{settings.s3.bucket}/{key}"
+    # TODO откат при ошибке    Unit of Work
+    async def delete_object(self, key: str) -> None:
+        async with self.s3_client as s3:
+            await s3.delete_object(Bucket=settings.s3.bucket, Key=key)
+
+    async def generate_presigned_url(self, key: str, expires_in: int = 3600) -> str:
+        async with self.s3_client as s3:
+            return await s3.generate_presigned_url(
+                'get_object',
+                Params={'Bucket': settings.s3.bucket, 'Key': key},
+                ExpiresIn=expires_in
+            )
+
+    async def list_objects(self) -> list[str]:
+        async with self.s3_client as s3:
+            response = await s3.list_objects_v2(Bucket=settings.s3.bucket)
+            contents = response.get("Contents", [])
+            return [obj["Key"] for obj in contents]
