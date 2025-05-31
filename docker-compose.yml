@@ -1,4 +1,4 @@
-name: blog-api
+name: prod-blog-api
 
 services:
   db:
@@ -11,6 +11,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1234
       POSTGRES_DB: database
+    ports:
+      - "5432:5432"
+  
   minio:
     image: minio/minio
     container_name: minio
@@ -23,4 +26,15 @@ services:
     volumes:
       - ~/Desktop/data:/data
     command: server --console-address :9001 /data
+
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
 

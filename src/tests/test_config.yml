@@ -1,11 +1,11 @@
-app_env: dev
+app_env: test
 
 database:
   host: localhost
   port: 5432
-  db: database
-  user: postgres
-  password: 1234
+  db: test_db
+  user: test
+  password: test
 
 rabbitmq:
   host: localhost

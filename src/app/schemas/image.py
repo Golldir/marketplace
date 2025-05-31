@@ -1,5 +1,19 @@
 from pydantic import BaseModel
 
+
+class ImageBaseSchema(BaseModel):
+    id: int
+    article_id: int
+    key: str
+    hash: str
+    type: str
+
+class ImageWithURLSchema(BaseModel):
+    id: int
+    key: str
+    type: str
+    presigned_url: str
+    
 class ImageCreateSchema(BaseModel):
     article_id: int
     key: str
@@ -21,3 +35,5 @@ class ImageUpdateSchema(BaseModel):
 
 class ImageDeleteSchema(BaseModel):
     id: int
+
+

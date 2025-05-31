@@ -27,7 +27,7 @@ async def get_image_by_id(
 @router.post("/")
 async def upload_image(
     image_service: Annotated[ImageService, Depends(get_image_service)],
-    article_id: int,
+    article_id: int = Form(...),
     type: str = Form(...),
     file: UploadFile = File(...),
 ):

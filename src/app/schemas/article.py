@@ -1,17 +1,18 @@
 from pydantic import BaseModel
 from typing import Optional
 from pydantic.config import ConfigDict
-
+from src.app.schemas.image import ImageWithURLSchema
+from typing import List
 
 class ArticleBaseSchema(BaseModel):
     id: int
     title: str
     text: str
     category_id: int
-    is_deleted: bool
+    is_deleted: bool = False
+    images: Optional[List[ImageWithURLSchema]] = None
     model_config = ConfigDict(from_attributes=True)
 
-# TODO: нужен ли key в ответе? presigned_url нормальное название?
 class ArticleGetSchema(BaseModel):
     id: int
     title: str
@@ -22,6 +23,12 @@ class ArticleGetSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class ArticleCreateSchema(BaseModel):
+    title: str
+    text: str
+    category_id: int
+
+class ArticleOutSchema(BaseModel):
+    id: int
     title: str
     text: str
     category_id: int

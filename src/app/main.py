@@ -1,27 +1,28 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.app.routers.category import router as category_router
-from src.app.routers.s3 import router as s3_router
 from src.app.routers.article import router as article_router
 from src.app.routers.image import router as image_router
+from src.app.routers.auth import router as auth_router
+from src.app.lifespan import lifespan
 
-
-# TODO skip спросить про обработку ошибок
-# TODO в core спросить про сессии и клиентов?
 
 app = FastAPI(
     title="Blog API",
-    description="API для блога с категориями статей",
+    description="API для блога",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
+    lifespan=lifespan
 )
 
+
 app.include_router(category_router)
-app.include_router(s3_router)
+# app.include_router(s3_router)
 app.include_router(article_router)
 app.include_router(image_router)
+app.include_router(auth_router)
 
 # Настройка CORS
 app.add_middleware(

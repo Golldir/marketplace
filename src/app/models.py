@@ -35,8 +35,14 @@ class Article(Base):
     )
 
     category: Mapped['Category'] = relationship('Category', back_populates='articles')
-    images: Mapped[list['Image']] = relationship('Image', back_populates='article', foreign_keys='Image.article_id')
-
+    images: Mapped[list['Image']] = relationship(
+        'Image',
+        back_populates='article',
+        foreign_keys='Image.article_id',
+        lazy="selectin"
+    )
+    
+# TODO в множественном числе или в единственном?
 class Image(Base):
     __tablename__ = 'images'
 
@@ -49,20 +55,10 @@ class Image(Base):
     article: Mapped[Optional['Article']] = relationship('Article', back_populates='images', foreign_keys=[article_id])
 
 
+class User(Base):
+    __tablename__ = 'users'
 
-
-
-
-
-
-# class DeletedArticle(Base):
-#     __tablename__ = 'deleted_articles'
-
-#     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-#     article_id: Mapped[int] = mapped_column(unique=True, nullable=False)
-#     title: Mapped[str] = mapped_column(String(255), nullable=False)
-#     text: Mapped[str] = mapped_column(Text, nullable=False)
-#     category_id: Mapped[int] = mapped_column(nullable=False)
-#     key: Mapped[str] = mapped_column(String(512), nullable=False)
-#     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-#     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)

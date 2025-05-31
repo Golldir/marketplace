@@ -1,0 +1,36 @@
+name: test-blog-api
+
+services:
+# ТЕСТЫ
+
+  test-db:
+    image: postgres:17
+    container_name: test-db
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: testdb
+    ports:
+      - "5433:5432"
+    
+
+  test-minio:
+    image: minio/minio
+    container_name: test-minio
+    ports:
+      - "9002:9000"
+      - "9003:9001"
+    environment:
+      MINIO_ROOT_USER: user
+      MINIO_ROOT_PASSWORD: password
+    volumes:
+      - ~/Desktop/data-test:/data
+    command: server --console-address :9001 /data
+
+  # test-rabbitmq:
+  #   image: rabbitmq:4.1-management
+  #   container_name: test-rabbitmq
+  #   ports:
+  #     - "5673:5672"
+  #     - "15673:15672"
+

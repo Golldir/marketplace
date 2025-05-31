@@ -1,34 +1,23 @@
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException
 from typing import List
-import uuid
-import hashlib
+import asyncio
 
-from src.app.repositories.article import ArticleRepository
-from src.app.repositories.category import CategoryRepository
-from src.app.repositories.s3 import S3Repository
 from src.app.schemas.article import (
     ArticleBaseSchema,
     ArticleCreateSchema,
     ArticleUpdateSchema,
-    ArticleGetSchema
 )
+from src.app.schemas.image import ImageWithURLSchema
+from src.app.core.uow import UnitOfWork
+from src.app.repositories.s3 import S3Repository
+from src.app.schemas.article import ArticleDeleteSchema
 
-from src.app.services.utils import generate_file_key, generate_file_hash
-
-
-# TODO нужно ли разбивать на условно ArticleCreateService и ArticleUpdateService?
 class ArticleService:
-    def __init__(
-        self,
-        article_repository: ArticleRepository,
-        s3_repository: S3Repository,
-        category_repository: CategoryRepository
-    ):
-        self.article_repository = article_repository
+    def __init__(self, uow: UnitOfWork, s3_repository: S3Repository):
+        self.uow = uow
         self.s3_repository = s3_repository
-        self.category_repository = category_repository
 
-    async def get_all_articles(
+    async def get_articles(
         self,
         search: str | None = None,
         category_id: int | None = None,
@@ -37,100 +26,93 @@ class ArticleService:
         page_size: int = 10
     ) -> List[ArticleBaseSchema]:
         """Получает все статьи с фильтрацией, поиском и пагинацией."""
-        return await self.article_repository.get_all_articles(
+
+        articles = await self.uow.article_repository.get_articles(
             search=search,
             category_id=category_id,
             show_deleted=show_deleted,
             page_number=page_number,
             page_size=page_size
         )
-    
-    async def get_article(self, article_id: int) -> ArticleGetSchema:
-        """Получает статью по id."""
-        article_db = await self.article_repository.get_article(article_id)
-        if not article_db:
-            raise HTTPException(status_code=404, detail="Article not found")
+        # TODO каждый раз возвращает разные presigned_url
+        article_base_schemas: List[ArticleBaseSchema] = []
+        for article in articles:
+            images = await self.uow.image_repository.get_images_by_article_id(article.id)
+            presigned_urls = await asyncio.gather(
+                *[self.s3_repository.generate_presigned_url(image.key) for image in images]
+            )
+            images_schemas: List[ImageWithURLSchema] = [
+                ImageWithURLSchema(
+                    id=image.id,
+                    key=image.key,
+                    type=image.type,
+                    presigned_url=url
+                )
+                for image, url in zip(images, presigned_urls)
+            ]
+
+            article_base_schema = ArticleBaseSchema(
+                id=article.id,
+                title=article.title,
+                text=article.text,
+                category_id=article.category_id,
+                images=images_schemas
+            )
+            article_base_schemas.append(article_base_schema)
         
-        presigned_url = await self.s3_repository.generate_presigned_url(article_db.key)
-        article_schema = ArticleGetSchema.model_validate(article_db, from_attributes=True)
-        article_schema.presigned_url = presigned_url
-        return article_schema
+        return article_base_schemas
     
 
     async def create_article(
         self,
         article_create_schema: ArticleCreateSchema,
-    ) -> int:
+    ) -> ArticleBaseSchema:
         """Создает новую статью без картинок."""
-        category_exists = await self.category_repository.category_exists(article_create_schema.category_id)
+        category_exists = await self.uow.category_repository.category_exists(article_create_schema.category_id)
         if not category_exists:
             raise HTTPException(status_code=404, detail="Category not found")
 
-        result = await self.article_repository.create_article(article_create_schema)
-        return result
+        article = await self.uow.article_repository.create_article(article_create_schema)
+        return ArticleBaseSchema.model_validate(article)
     
-    # async def create_article(self, article: ArticleCreateSchema, file: UploadFile) -> int:
-    #     """Создает новую статью."""
-    #     category_exists = await self.category_repository.category_exists(article.category_id)
-    #     if not category_exists:
-    #         raise HTTPException(status_code=404, detail="Category not found")
-        
-    #     article.key = generate_file_key(file.filename)               
-    #     await self.s3_repository.upload_fileobj(
-    #         file_obj=file.file, 
-    #         key=article.key,
-    #         content_type=file.content_type
-    #     )
-    #     return await self.article_repository.create_article(article)
-    
+# TODO Base убрать Out
+
     async def update_article(
         self, 
         article_id: int, 
         article_update_schema: ArticleUpdateSchema
-    ) -> int:
+    ) -> ArticleBaseSchema:
         """Обновляет статью."""
         # Получаем текущую статью
-        article_original = await self.article_repository.get_article(article_id)
-        if not article_original:
+        existing_article = await self.uow.article_repository.get_article(article_id)
+        if not existing_article:
             raise HTTPException(status_code=404, detail="Article not found")
         
         # Проверяем категорию, если она обновляется
         if article_update_schema.category_id:
-            category_exists = await self.category_repository.category_exists(article_update_schema.category_id)
+            category_exists = await self.uow.category_repository.category_exists(article_update_schema.category_id)
             if not category_exists:
                 raise HTTPException(status_code=404, detail="Category not found")
 
         # Собираем данные для обновления
-        update_data = {}
+        changes = {}
         for field, value in article_update_schema.model_dump(exclude_unset=True).items():
-            if value is not None and getattr(article_original, field) != value:
-                update_data[field] = value
+            if value is not None and getattr(existing_article, field) != value:
+                changes[field] = value
 
-        if not update_data:
+        if not changes:
             raise HTTPException(status_code=400, detail="No changes to update")
 
         # Обновляем только саму статью
-        result = await self.article_repository.update_article(article_id, update_data)
-        return result
-
-    async def delete_article(self, article_id: int) -> int:
-        """Удаляет статью."""
-        article = await self.article_repository.get_article(article_id)
-        if not article:
-            raise HTTPException(status_code=404, detail="Article not found")
-        
-        # TODO 2 sessions?
-        result = await self.article_repository.hard_delete_article(article_id)
-        await self.s3_repository.delete_object(article.key)
-        
-        return result
+        article = await self.uow.article_repository.update_article(article_id, changes)
+        return ArticleBaseSchema.model_validate(article)
     
-    async def soft_delete_article(self, article_id: int) -> int:
+    async def soft_delete_article(self, article_id: int) -> ArticleDeleteSchema:
         """Фейково удаляет статью: устанавливает is_deleted в True."""
-        article = await self.article_repository.get_article(article_id)
+        article = await self.uow.article_repository.get_article(article_id)
         if not article:
             raise HTTPException(status_code=404, detail="Article not found")
-        
-        result = await self.article_repository.soft_delete_article(article_id)
-        return result
+        await self.uow.article_repository.soft_delete_article(article_id)
+        return ArticleDeleteSchema(id=article_id)
 
+    

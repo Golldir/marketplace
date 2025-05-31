@@ -10,23 +10,20 @@ class CategoryRepository:
 
     async def get_all_categories(self) -> List[Category]:
         """Получает все категории."""
-        async with self.db_session as session:
-            result = await session.scalars(select(Category))
-            return result.all()
+        result = await self.db_session.scalars(select(Category))
+        return result.all()
     
     async def get_category_by_id(self, category_id: int) -> Category:
         """Получает категорию по id."""
         stmt = select(Category).where(Category.id == category_id)
-        async with self.db_session as session:
-            result = await session.scalar(stmt)
-            return result
+        result = await self.db_session.scalar(stmt)
+        return result
     
     async def get_category_by_name(self, name: str) -> Category:
         """Получает категорию по name."""
         stmt = select(Category).where(Category.name == name)
-        async with self.db_session as session:
-            result = await session.scalar(stmt)
-            return result
+        result = await self.db_session.scalar(stmt)
+        return result
     
     async def create_category(self, category: CategoryCreateSchema) -> Category:
         """Создает новую категорию."""
@@ -35,10 +32,8 @@ class CategoryRepository:
             .values(name=category.name)
             .returning(Category)
         )
-        async with self.db_session as session:
-            result = (await session.execute(stmt)).scalar_one_or_none()
-            await session.commit()
-            return result
+        result = (await self.db_session.execute(stmt)).scalar_one_or_none()
+        return result
         
     async def update_category(self, category_id: int, category: CategoryUpdateSchema) -> Category:
         """Обновляет категорию."""
@@ -48,24 +43,19 @@ class CategoryRepository:
             .where(Category.id == category_id)
             .returning(Category)
         )
-        async with self.db_session as session:
-            result = await session.execute(stmt)
-            await session.commit()
-            return result.scalar_one()
+        result = await self.db_session.execute(stmt)
+        return result.scalar_one()
 
     async def delete_category(self, category_id: int) -> int:
         """Удаляет категорию."""
-        async with self.db_session as session:
-            stmt = (
-                delete(Category)
-                .where(Category.id == category_id)
-                .returning(Category.id)
-            )
-            result = await session.execute(stmt)
-            await session.commit()
-            return result.scalar_one()
+        stmt = (
+            delete(Category)
+            .where(Category.id == category_id)
+            .returning(Category.id)
+        )
+        result = await self.db_session.execute(stmt)
+        return result.scalar_one()
 
     async def category_exists(self, category_id: int) -> bool:
         stmt = select(exists().where(Category.id == category_id))
-        async with self.db_session as session:
-            return await session.scalar(stmt)
+        return await self.db_session.scalar(stmt)
