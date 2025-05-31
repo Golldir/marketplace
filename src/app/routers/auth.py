@@ -1,15 +1,11 @@
-from fastapi import APIRouter, Depends, Response, Cookie
+from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated
 
 from src.app.dependencies.auth import get_auth_service
 from src.app.services.auth import AuthService
 from src.app.schemas.auth import UserCreateSchema, UserReadSchema, TokenSchema
-from src.app.core.config import settings
-from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from src.app.services.utils import create_access_token
-from datetime import timedelta
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])

@@ -1,14 +1,11 @@
 from src.app.core.s3 import S3_Session
-from typing import Annotated
-from fastapi import Depends
-from src.app.repositories.s3 import S3Repository
-
+import aioboto3
 
 async def get_s3_client_and_bucket():
     s3_config = S3_Session()
-    s3_session = s3_config.session
+    # s3_session = s3_config.session
     print('PROD S3 CONFIG ')
-
+    s3_session = aioboto3.Session()
     async with s3_session.client(
         's3',
         aws_access_key_id=s3_config.aws_access_key_id,
@@ -18,9 +15,8 @@ async def get_s3_client_and_bucket():
     ) as s3_client:
         yield s3_client, s3_config.bucket
 
-async def get_s3_repository(
-        s3_client_and_bucket = Depends(get_s3_client_and_bucket)
-):
-    print('GET S3 REPOSITORY')
-    s3_client, s3_bucket = s3_client_and_bucket
-    return S3Repository(s3_client, s3_bucket)
+# async def get_s3_repository(
+#         s3_client_and_bucket = Depends(get_s3_client_and_bucket)
+# ):
+#     s3_client, s3_bucket = s3_client_and_bucket
+#     return S3Repository(s3_client, s3_bucket)

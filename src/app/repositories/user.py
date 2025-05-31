@@ -1,6 +1,6 @@
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, insert, update, delete, or_
+from sqlalchemy import select, insert, delete, or_
 from src.app.models import User
 from src.app.schemas.auth import UserCreateSchema
 

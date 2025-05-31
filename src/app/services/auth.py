@@ -1,18 +1,11 @@
 from fastapi import HTTPException, status
-from typing import Optional
 from src.app.core.uow import UnitOfWork
 from src.app.schemas.auth import UserCreateSchema, UserReadSchema, UserInDBSchema
 from src.app.core.security import pwd_context
-from src.app.models import User
-from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.exceptions import HTTPException as FastAPIErrors
-from jose import JWTError
 from src.app.services.utils import create_access_token
 from datetime import timedelta
 from jose import jwt
 from src.app.core.config import settings
-from fastapi import Depends
-from typing import Annotated
 from src.app.schemas.auth import TokenSchema
 from src.app.tasks.email import send_email
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, status
 from typing import List, Optional
 from src.app.dependencies.article import get_article_service
 from typing import Annotated
@@ -7,11 +7,9 @@ from src.app.schemas.article import (
     ArticleBaseSchema,
     ArticleCreateSchema,
     ArticleUpdateSchema,
-    ArticleGetSchema,
     ArticleOutSchema
 )
-from fastapi import UploadFile, File, Form
-from src.app.core.config import settings
+from fastapi import Form
 
 
 router = APIRouter(prefix="/articles", tags=["Articles"])

@@ -1,12 +1,10 @@
-from typing import List, Optional
+from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, insert, update, delete, exists, func, or_
-from sqlalchemy.dialects.postgresql import TSVECTOR
+from sqlalchemy import select, insert, update, exists, func
 from src.app.models import Article
 from src.app.schemas.article import (
     ArticleCreateSchema, 
-    ArticleUpdateSchema, 
-    ArticleBaseSchema
+    ArticleUpdateSchema
 )
 
 class ArticleRepository:
@@ -38,7 +36,7 @@ class ArticleRepository:
             stmt = stmt.where(Article.category_id == category_id)
 
         if not show_deleted:
-            stmt = stmt.where(Article.is_deleted == False)
+            stmt = stmt.where(Article.is_deleted.is_(False))  # noqa: E712
 
         stmt = stmt.offset((page_number - 1) * page_size).limit(page_size)
         result = await self.db_session.scalars(stmt)

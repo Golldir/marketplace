@@ -3,10 +3,11 @@ from zoneinfo import ZoneInfo
 from dynaconf import Dynaconf
 from pydantic import AnyUrl, BaseModel, AmqpDsn
 from pydantic_settings import BaseSettings
+import os
 
+config_file = os.getenv("APP_ENV", "dev")
 
-
-_settings = Dynaconf(settings_files=["config.yaml"])
+_settings = Dynaconf(settings_files=[f"config.{config_file}.yaml"]) 
 _project_timezone = "Europe/Moscow"
 
 _db_dsn = AnyUrl.build(

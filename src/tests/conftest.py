@@ -1,18 +1,23 @@
+import os
 from httpx import AsyncClient, ASGITransport
 import pytest_asyncio
+import pytest
 
 from src.app.main import app
 from src.app.dependencies.db_session import get_db_session
-from src.tests.fixtures.db import async_db, async_db_engine, postgres_service
-from src.tests.fixtures.docker import docker_compose_file, docker_setup
-from src.tests.fixtures.s3 import async_s3_client_and_bucket
 from src.app.dependencies.s3 import get_s3_client_and_bucket
 
 pytest_plugins = [
-    "src.tests.fixtures.docker",
     "src.tests.fixtures.db",
-    "src.tests.fixtures.s3"
+    "src.tests.fixtures.s3",
+    "src.tests.fixtures.docker",
 ]
+
+@pytest.fixture(autouse=True)
+def set_test_env():
+    os.environ["APP_ENV"] = "test"
+    yield
+    del os.environ["APP_ENV"]
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
 async def async_client(async_db, async_s3_client_and_bucket):

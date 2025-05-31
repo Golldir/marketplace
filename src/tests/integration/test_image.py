@@ -1,21 +1,43 @@
 import pytest
-from fastapi import UploadFile
-from pathlib import Path
-from src.tests.utils.utils_image import create_test_image
+from src.tests.utils.utils_image import create_test_image, get_test_image, delete_test_image
+from src.tests.fixtures.test_data import test_categories_data, test_articles_data, test_image_data
 
 @pytest.mark.asyncio
 async def test_create_image(async_client):
     # Создаем тестовое изображение
 
-    response = await create_test_image(async_client)
+    response = await create_test_image(
+        async_client,
+        category_data=test_categories_data[0],
+        article_data=test_articles_data[0]
+    )
     
     print('response', response.json())
     assert response.status_code == 200
 
+@pytest.mark.asyncio
+async def test_get_image(async_client):
+    response = await get_test_image(
+        async_client,
+        category_data=test_categories_data[0],
+        article_data=test_articles_data[0]
+    )
 
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]['article_id'] == test_image_data['article_id']
+    assert response.json()[0]['hash'] == test_image_data['hash']
+    assert response.json()[0]['type'] == test_image_data['type']
 
-
-
+@pytest.mark.asyncio
+async def test_delete_image(async_client):
+    response = await delete_test_image(
+        async_client,
+        category_data=test_categories_data[0],
+        article_data=test_articles_data[0]
+    )
+    assert response.status_code == 200
+    assert response.json() == {"message": "Image deleted successfully"}
 
 
     

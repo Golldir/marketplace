@@ -32,6 +32,3 @@ smtp:
   port: 587
   user: golldirmax123@gmail.com
   password: pzya secc hpas laeg
-
-first_external_host: http://web1.org
-second_external_host: http://web2.org

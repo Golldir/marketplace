@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, status
-from typing import List, Optional
+from fastapi import APIRouter, Depends, status
+from typing import List
 from src.app.dependencies.category import get_category_service
 from typing import Annotated
 from src.app.services.category import CategoryService

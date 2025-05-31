@@ -1,5 +1,4 @@
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 from src.app.core.uow import UnitOfWork
 from src.app.dependencies.uow import get_uow
 from src.app.services.category import CategoryService

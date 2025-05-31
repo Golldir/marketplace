@@ -8,14 +8,12 @@ from src.app.schemas.article import (
     ArticleUpdateSchema,
 )
 from src.app.schemas.image import ImageWithURLSchema
-from src.app.core.uow import UnitOfWork
-from src.app.repositories.s3 import S3Repository
 from src.app.schemas.article import ArticleDeleteSchema
+from src.app.core.uow_with_s3 import UnitOfWorkWithS3
 
 class ArticleService:
-    def __init__(self, uow: UnitOfWork, s3_repository: S3Repository):
-        self.uow = uow
-        self.s3_repository = s3_repository
+    def __init__(self, uow_with_s3: UnitOfWorkWithS3):
+        self.uow_with_s3 = uow_with_s3
 
     async def get_articles(
         self,
@@ -27,7 +25,7 @@ class ArticleService:
     ) -> List[ArticleBaseSchema]:
         """Получает все статьи с фильтрацией, поиском и пагинацией."""
 
-        articles = await self.uow.article_repository.get_articles(
+        articles = await self.uow_with_s3.article_repository.get_articles(
             search=search,
             category_id=category_id,
             show_deleted=show_deleted,
@@ -37,9 +35,9 @@ class ArticleService:
         # TODO каждый раз возвращает разные presigned_url
         article_base_schemas: List[ArticleBaseSchema] = []
         for article in articles:
-            images = await self.uow.image_repository.get_images_by_article_id(article.id)
+            images = await self.uow_with_s3.image_repository.get_images_by_article_id(article.id)
             presigned_urls = await asyncio.gather(
-                *[self.s3_repository.generate_presigned_url(image.key) for image in images]
+                *[self.uow_with_s3.s3_repository.generate_presigned_url(image.key) for image in images]
             )
             images_schemas: List[ImageWithURLSchema] = [
                 ImageWithURLSchema(
@@ -68,11 +66,11 @@ class ArticleService:
         article_create_schema: ArticleCreateSchema,
     ) -> ArticleBaseSchema:
         """Создает новую статью без картинок."""
-        category_exists = await self.uow.category_repository.category_exists(article_create_schema.category_id)
+        category_exists = await self.uow_with_s3.category_repository.category_exists(article_create_schema.category_id)
         if not category_exists:
             raise HTTPException(status_code=404, detail="Category not found")
 
-        article = await self.uow.article_repository.create_article(article_create_schema)
+        article = await self.uow_with_s3.article_repository.create_article(article_create_schema)
         return ArticleBaseSchema.model_validate(article)
     
 # TODO Base убрать Out
@@ -84,13 +82,13 @@ class ArticleService:
     ) -> ArticleBaseSchema:
         """Обновляет статью."""
         # Получаем текущую статью
-        existing_article = await self.uow.article_repository.get_article(article_id)
+        existing_article = await self.uow_with_s3.article_repository.get_article(article_id)
         if not existing_article:
             raise HTTPException(status_code=404, detail="Article not found")
         
         # Проверяем категорию, если она обновляется
         if article_update_schema.category_id:
-            category_exists = await self.uow.category_repository.category_exists(article_update_schema.category_id)
+            category_exists = await self.uow_with_s3.category_repository.category_exists(article_update_schema.category_id)
             if not category_exists:
                 raise HTTPException(status_code=404, detail="Category not found")
 
@@ -104,15 +102,15 @@ class ArticleService:
             raise HTTPException(status_code=400, detail="No changes to update")
 
         # Обновляем только саму статью
-        article = await self.uow.article_repository.update_article(article_id, changes)
+        article = await self.uow_with_s3.article_repository.update_article(article_id, changes)
         return ArticleBaseSchema.model_validate(article)
     
     async def soft_delete_article(self, article_id: int) -> ArticleDeleteSchema:
         """Фейково удаляет статью: устанавливает is_deleted в True."""
-        article = await self.uow.article_repository.get_article(article_id)
+        article = await self.uow_with_s3.article_repository.get_article(article_id)
         if not article:
             raise HTTPException(status_code=404, detail="Article not found")
-        await self.uow.article_repository.soft_delete_article(article_id)
+        await self.uow_with_s3.article_repository.soft_delete_article(article_id)
         return ArticleDeleteSchema(id=article_id)
 
     

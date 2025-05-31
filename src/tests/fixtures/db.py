@@ -3,7 +3,6 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.pool import NullPool
 from src.app.models import Base
-import os
 import asyncpg
 import asyncio
 
@@ -12,7 +11,7 @@ async def is_postgres_responsive(url: str) -> bool:
         conn = await asyncpg.connect(url)
         await conn.close()
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 

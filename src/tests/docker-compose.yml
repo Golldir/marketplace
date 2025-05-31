@@ -1,8 +1,6 @@
 name: test-blog-api
 
 services:
-# ТЕСТЫ
-
   test-db:
     image: postgres:17
     container_name: test-db
@@ -13,7 +11,6 @@ services:
     ports:
       - "5433:5432"
     
-
   test-minio:
     image: minio/minio
     container_name: test-minio

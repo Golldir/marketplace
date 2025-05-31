@@ -18,3 +18,10 @@ test_article_update_data = {
 test_category_update_data = {
     "name": "Updated Category 1",
 }
+
+test_image_data = {
+    "article_id": 1,
+    "key": "test_image.jpg",
+    "hash": "8a56ccfc341865af4ec1c2d836e52e71dcd959e41a8522f60bfcc3ff4e99d388",
+    "type": "content"
+}

@@ -1,10 +1,7 @@
-from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.app.repositories.article import ArticleRepository
 from src.app.repositories.image import ImageRepository
-from src.app.repositories.s3 import S3Repository
 from src.app.repositories.category import CategoryRepository
-from src.app.core.database import async_session
 from src.app.repositories.user import UserRepository
 
 class UnitOfWork:

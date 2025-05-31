@@ -1,9 +1,5 @@
-import aioboto3
-from typing import BinaryIO, AsyncGenerator
 from src.app.core.config import settings
 
-import aioboto3
-from contextlib import asynccontextmanager
 
 class S3_Session:
     def __init__(self):
