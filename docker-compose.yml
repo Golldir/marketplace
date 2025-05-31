@@ -2,6 +2,7 @@ name: prod-blog-api
 
 services:
   app:
+    &app
     build:
       context: .
       dockerfile: src/app/Dockerfile
@@ -16,7 +17,16 @@ services:
       - db
       - minio
       - rabbitmq
+    command: ["poetry", "run", "uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
+  taskiq-worker:
+    <<: *app
+    ports: []
+    container_name: taskiq-worker
+    restart: always
+    command: [taskiq, worker, src.app.core.tkq:broker, src.app.tasks.email, --reload]
+    depends_on:
+      - app
 
   db:
     image: postgres:17
