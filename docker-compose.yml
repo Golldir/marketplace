@@ -14,9 +14,8 @@ services:
     environment:
       APP_ENV: prod
     depends_on:
-      - db
-      - minio
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     command: ["poetry", "run", "uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
   taskiq-worker:
