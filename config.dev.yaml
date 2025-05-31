@@ -1,0 +1,37 @@
+app_env: dev
+
+database:
+  host: localhost
+  port: 5432
+  db: database
+  user: postgres
+  password: 1234
+
+rabbitmq:
+  host: localhost
+  port: 5672
+  user: guest
+  password: guest
+
+s3:
+  access_key: user
+  secret_key: password
+  region: ru-central1
+  endpoint: http://localhost:9000
+  bucket: bucket
+
+auth:
+  SECRET_KEY: 57cd796a024b5ee746187aab562ea571087df9fcf9e7ab2dd7fcb0582c2493ce
+  ALGORITHM: HS256
+  ACCESS_TOKEN_EXPIRE_MINUTES: 30
+  COOKIE_SECURE: True
+  COOKIE_SAMESITE: Lax
+
+smtp:
+  host: smtp.gmail.com
+  port: 587
+  user: golldirmax123@gmail.com
+  password: pzya secc hpas laeg
+
+first_external_host: http://web1.org
+second_external_host: http://web2.org

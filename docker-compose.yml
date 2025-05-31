@@ -1,0 +1,72 @@
+name: prod-blog-api
+
+services:
+  app:
+    &app
+    build:
+      context: .
+      dockerfile: src/app/Dockerfile
+    container_name: app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config.prod.yaml:/app/config.prod.yaml
+    environment:
+      APP_ENV: prod
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: ["poetry", "run", "uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  taskiq-worker:
+    <<: *app
+    ports: []
+    container_name: taskiq-worker
+    restart: always
+    command: [taskiq, worker, src.app.core.tkq:broker, src.app.tasks.email, --reload]
+    depends_on:
+      - app
+
+  db:
+    image: postgres:17
+    container_name: db
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: database
+    ports:
+      - "5432:5432"
+  
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: user
+      MINIO_ROOT_PASSWORD: password
+    volumes:
+      - ~/Desktop/data:/data
+    command: server --console-address :9001 /data
+
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+

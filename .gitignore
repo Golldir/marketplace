@@ -1,0 +1,8 @@
+.venv
+.idea/*
+*__pycache__*
+.cursorrules
+.vscode
+.cursor/*
+.pytest_cache/*
+.ruff_cache/*
